@@ -1,32 +1,23 @@
-from BeautifulSoup import BeautifulSoup
+from lxml import etree
 
 
 class PlosXml:
     def __init__(self, path):
         self.raw = None
-        with open(path, 'rb') as f:
-            self.raw = f.read()
+        
+        self.xml = etree.parse(path)
 
-        self.xml = BeautifulSoup(self.raw)
-        docs_list = self.xml.findAll('doc')
+        docs_list = self.xml.xpath('//*[self::doc]')
 
         self.docs = []
 
         for doc in docs_list:
             doc_dict = {}
-            children = doc.findChildren()
-
+            children = list(doc)
             identifiers = []
             for child in children:
-                try:
-                    identifiers = identifiers + [child['name']]
-                except KeyError:
-                    continue
-
-            for ident in identifiers:
-                contents = doc.find(True, {'name': ident}).contents
-                contents = [str(cont).replace('<str>', '').
-                            replace('</str>', '') for cont in contents]
-                doc_dict[ident] = contents
+                name = child.attrib['name']
+                content = child.text
+                doc_dict[name] = content
 
             self.docs = self.docs + [doc_dict]
